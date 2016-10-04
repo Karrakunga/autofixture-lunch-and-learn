@@ -3,6 +3,8 @@ using Core.enums;
 using Domain;
 using Moq;
 using NUnit.Framework;
+using Ploeh.AutoFixture;
+using Ploeh.AutoFixture.AutoMoq;
 
 namespace App.Tests.Unit.CarCreatorTests
 {
@@ -17,21 +19,17 @@ namespace App.Tests.Unit.CarCreatorTests
         [OneTimeSetUp]
         public void GivenACarFactory_WhenProduceIsCalled()
         {
-            _expectedResult = new Car
-            {
-                Manufacturer = "Ford",
-                Make = "Ka",
-                Engine = new Engine
-                {
-                    EngineSize = EngineSize.ReallyBig,
-                    EngineType = "V6"
-                }
-            };
+            var fixture = new Fixture()
+                .Customize(new AutoMoqCustomization());
 
-            _mockCarFactory = new Mock<ICarFactory>();
+            var engine = fixture.Build<Engine>().With(e => e.EngineSize, EngineSize.ReallyBig).Create();
+
+            _expectedResult = fixture.Build<Car>().With(car => car.Engine, engine).Create();
+
+            _mockCarFactory = fixture.Freeze<Mock<ICarFactory>>();
             _mockCarFactory.Setup(factory => factory.Produce()).Returns(_expectedResult);
 
-            var carCreator = new CarCreator(_mockCarFactory.Object);
+            var carCreator = fixture.Create<CarCreator>();   
             _result = carCreator.Create();
         }
 
